@@ -1,5 +1,12 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" plugin manager
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" plugins
 execute pathogen#infect()
+call plug#begin('~/.vim/plugged')
+
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
+
+" Initialize plugin system
+call plug#end()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tabs
 set tabstop=4       " number of visual spaces per TAB
@@ -27,19 +34,32 @@ set hlsearch        " highlight matches
 " de-highlight matches by pressing spacebar 
 nnoremap <silent> <Space> :nohlsearch<Bar>:echo<CR>
 
+if executable('ag')
+    let g:ackprg = 'ag --vimgrep'
+endif
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" leader shortcuts
-let mapleader=","       " leader is comma
+let mapleader="\<Space>"
 " toggle gundo
 nnoremap <leader>u :GundoToggle<CR>
 " save session - TODO:improve this, it creates a Session.vim a
 " in the directory
 nnoremap <leader>s :mksession<CR>
+nnoremap <Leader>w :w<CR>
+nnoremap <Leader>q :q<CR>
+nnoremap <Leader>Q :q!<CR>
+nnoremap <Leader>wq :wq<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tabs
-nnoremap <leader>t :tabe<CR>
-nnoremap <leader><Tab> :tabn<CR>
-nnoremap <leader><S-Tab> :tabp<CR>
+nnoremap <C-t> :tabe<CR>
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" navigating windows
+set splitbelow
+set splitright
+nnoremap <C-Left> <C-w>h
+nnoremap <C-Down> <C-w>j
+nnoremap <C-Up> <C-w>k
+nnoremap <C-Right> <C-w>l
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" syntax & coloring
 syntax on
 
