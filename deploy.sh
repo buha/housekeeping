@@ -11,12 +11,15 @@ help()
     echo "Usage: deploy [-h|--help]"
     echo "       deploy [-n|--dry-run]"
     echo "              [-c|--changeload user/password@host]"
-    echo "              /path/to/source [user@]host:/path/to/destination"
+    echo "              [/path/to/source] [[user@]host:]/path/to/destination"
+	echo
+	echo "If not /path/to/source is given, it will attempt to deploy recursively"
+	echo "from current directory, provided that it is a child directory of CVSROOT."
 }
 
 OPTS=`getopt -o hnc: --long dry-run,help,changeload: -n 'parse-options' -- "$@"`
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
-#echo $OPTS
+echo $OPTS
 eval set -- "$OPTS"
 
 HELP=false
@@ -27,7 +30,7 @@ while true; do
     -h | --help )    HELP=true; shift ;;
     -n | --dry-run ) DRY_RUN=true; shift ;;
     -c | --changeload ) LOAD_CHANGES="$2"; shift; shift ;;
-    -- ) shift; if [ $1 ] && [ $2 ]; then FROM=$1; shift; TO=$1; shift; fi; break ;;
+    -- ) shift; POS1=$1; POS2=$2; shift; break ;;
     * ) break ;;
   esac
 done
@@ -48,39 +51,45 @@ if ! [ -z $LOAD_CHANGES ]; then
     fi
 fi
 
-if [ -z $FROM ] || [ -z $TO ]; then
-    # Either FROM or TO were NOT defined, ignore them, try to sync from current working directory
-    FROM=$(echo $(pwd) | perl -ne 'if( m:(.+/cvs/[^/]*)(.*): ) { print $1; };') # search directory tree upwards for cvs subfolder (project folder)
-    if [ -z $FROM ]; then
-        echo "Nothing to do in $(pwd)"
-        exit 0
-    fi
-    basedir="$(basename $FROM)"
-    
-    # ssh to .o host 
-    SSH_USER=darius
-    SSH_HOST=pingu
-    SSH_DIRPREFIX="/home/$SSH_USER/cvs"
-    SSH_DIR="$SSH_DIRPREFIX/$basedir"
-    TO=$SSH_USER@$SSH_HOST:$SSH_DIRPREFIX
+if [ -z $POS2 ] && ! [ -z $POS1]; then
+    # try to sync from current working directory
+	cvsroot=$(echo $CVSROOT | perl -ne 'if( m|.+:(.+)@(.+):(\/.*)| ) { print $3; };')
+
+	if [[ $(pwd) == "$cvsroot"* ]]; then
+		FROM=$(echo $(pwd) | perl -ne "if( m|(${cvsroot//\//\\/}\/?([^/]*))| ) { print \$1; };") 
+		if [ -z $FROM ]; then
+			echo This script only deploys projects under CVSROOT\($cvsroot\). Your working directory is $(pwd)
+			exit 0
+		fi
+		TO=$POS1 
+	else
+		echo This script only deploys projects under CVSROOT\($CVSROOT\). Your working directory is $(pwd)
+		exit 0
+	fi
+elif [ -z $POS1 ]; then
+	help
+	exit 0
 else
-    SSH_USER=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $2; };')
-    SSH_HOST=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $3; };')
-    SSH_DIR=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $4; };')
-    if [ -z $SSH_HOST ] || [ -z $SSH_DIR ]; then 
-        help
-        exit 0
-    fi 
+	FROM=$POS1
+	TO=$POS2
 fi    
+
+SSH_USER=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $2; };')
+SSH_HOST=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $3; };')
+SSH_DIR=$(echo "$TO" | perl -ne 'if( m|(([a-zA-Z]*)@)?(.+):(.+)| ) { print $4; };')
+if [ -z $SSH_HOST ] || [ -z $SSH_DIR ]; then 
+	help
+	exit 0
+fi 
 
 if [ $DRY_RUN == false ]; then
 	dryrun=''
 	syncmessage="Syncing"
 else
 	dryrun='-n'
-	syncmessage="Syncing simulation between"
+	syncmessage="Syncing simulation "
 fi
-echo -e "$syncmessage [local] $BOLD$FROM$NORMAL with [$SSH_HOST] $BOLD$SSH_DIR$NORMAL"
+echo -e "$syncmessage from $BOLD$FROM$NORMAL to $BOLD$SSH_DIR$NORMAL"
 exec 5>&1
 
 changelist=$(rsync -uaiP $dryrun --delete --one-file-system --log-file=rsync.log --include "*/"  --include="*.o" --exclude="*" \
@@ -89,6 +98,29 @@ changelist=$(rsync -uaiP $dryrun --delete --one-file-system --log-file=rsync.log
 if [[ -z $changelist ]]; then
     echo "Files are up to date"	
     exit 0
+else
+filterlist=$(
+python - << EOF
+#!/usr/bin/python3
+import sys
+import re
+
+regex = r"Entering directory .+?\/Prb\/code\/\w+\'(.|\n)+?ldppc .*-o ([^.]*.o)"
+
+with open("nul_poctogem", 'r') as f:                                                                                                                                                                                         
+	data=f.read()
+
+matches = re.finditer(regex, data, re.MULTILINE)
+
+for matchNum, match in enumerate(matches):
+	print(match.group(2))
+EOF
+)
+
+	echo FILTERLIST=$filterlist
+ 	#for i in $changelist; do
+	#	if [ $(echo $filterlist | grep -q $i) ]; then
+	#		filteredlist=	
 fi
 
 if ! [ -z $LOAD_CHANGES ] && [ $DRY_RUN == false ]; then
@@ -109,9 +141,6 @@ if ! [ -z $LOAD_CHANGES ] && [ $DRY_RUN == false ]; then
     echo -e "\n# changed the working directory to its previous value" >> $CHANGEFILE
     echo -e "cd previousWorkingDirectory" >> $CHANGEFILE
     echo -e "free previousWorkingDirectory" >> $CHANGEFILE
-
-    # upload changeload script
-    #ftpDo.sh put $CHANGEFILE $TELNET_HOST $TELNET_USER $TELNET_PASS > /dev/null 2>&1
 
 ftp -inv $TELNET_HOST << EOF
 user $TELNET_USER $TELNET_PASS
