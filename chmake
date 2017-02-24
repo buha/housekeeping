@@ -6,16 +6,13 @@ f_usage()
    echo "          `basename $0` clean"
 }
 
-f_currenttarget()
+f_checkmakefile()
 {
-	makefiles=($(find . -mindepth 2  -name "./*/Makefile$"))
-	makefile=${makefiles[$RANDOM % ${#makefiless[@]} ]}
-	if grep --quiet "NP_SOFT :sh= echo" $makefile; then
-        echo sun
-	elif grep --quiet 'NP_SOFT := $(shell echo' $makefile; then
-		echo linux
+	makefile=$1
+	if grep --quiet "NP_SOFT" $makefile; then
+		return 0
 	else
-		echo "Can't find sun or linux signature in $makefile."
+		return -1 
 	fi
 }
 
@@ -23,10 +20,16 @@ f_initial()
 {
     target=$1
 
+	#makefiles=($(find . -mindepth 2 -name "Makefile"))
+	#for i in ${makefiles[@]}; do
+	#	if ! f_checkmakefile $i; then
+	#		echo "Weird $i. Please fix it."
+	#		exit 0
+	#	fi
+	#done
+
 	echo -n "Creating backups of the original sun-specific Makefiles ..."
-	makefiles=($(find . -mindepth 2 -name "Makefile"))
-	for i in ${makefiles[@]}
-	do 
+	for i in ${makefiles[@]}; do 
 		cp -a $i  $i.sun
 	done
 	echo " done"
@@ -56,12 +59,19 @@ else
     then
 		makefiles=($(find . -mindepth 2 -name "Makefile.$target"))
 		if [ ${#makefiles[@]} -eq 0 ]; then
-			f_initial $target
+			makefiles=($(find . -mindepth 2 -name "Makefile"))
+			if [ ${#makefiles[@]} -eq 0 ]; then
+				echo "No Makefile found; are you in the right directory?"
+				echo $(pwd)
+				exit 0
+			else
+				f_initial $target
+			fi
 		fi
 		
-		echo -n "Creating symlinks towards $target-specific Makefiles ......"
-        for i in ${makefiles[@]}
-        do
+		makefiles=($(find . -mindepth 2 -name "Makefile.$target"))
+		echo -n "Creating symlinks towards $target-specific Makefiles ........."
+        for i in ${makefiles[@]}; do
             ( cd $(dirname $i);  rm -f Makefile;  ln -s Makefile.$target Makefile )
         done
 		echo " done"
