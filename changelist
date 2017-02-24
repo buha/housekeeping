@@ -28,8 +28,9 @@ try:
 except ImportError:
     exit("This software refuses to run until docopt is installed:\n$ pip install docopt")
 
+# Filters
 poctogem = ("Simu.o", "Subipdrv.o", "ioBrdmisc.o", "fpcLib.o", "MmiIni.o", "npSys.o", "MmiLib.o", "Hddata.o", "Loader.o", "Stgbasic.o", "Ipfunc.o", "Stgapl.o", "Align.o", "sacc.o", "AcuVme.o", "Option.o", "printSub.o", "Alnapl.o", "Polish.o", "Inspfunc.o", "Lha.o", "MmiSDiag.o", "MmiSetup.o", "MmiTrack.o", "MmiChg.o", "MmiDiag.o", "MmiStage.o", "MmiBase.o", "prbD_ldcall.o", "StgDiag.o", "Diag.o", "libNetPronet.o", "Appli.o")
-mv2700 = ()
+mv2700 = ("Simu.o", "fpcLib.o", "MmiIni.o", "npSys.o", "StgCommon.o", "Common.o", "ProbLib.o", "MmiLib.o", "Loader.o", "Hddata.o", "Stgbasic.o", "Ipfunc.o", "Stgapl.o", "Align.o", "sacc.o", "AcuVme.o", "Option.o", "printSub.o", "Alnapl.o", "Polish.o", "Inspfunc.o", "Lha.o", "MmiSDiag.o", "MmiTrack.o", "MmiChg.o", "MmiSetup.o", "MmiDiag.o", "MmiStage.o", "MmiBase.o", "prbD_ldcall.o", "StgDiag.o", "Diag.o", "libNetPronet.o", "Appli.o")
 
 def main(args):
 
@@ -48,18 +49,19 @@ def main(args):
         filename=args['FILE']
         with open(filename, 'r') as f:
             data=f.read()
-    except (TypeError,FileNotFoundError) as e:
-        exit("Invalid file " +  (filename if filename != None else ''))
-
+    except TypeError as e:
+        exit("File not specified")
+    except FileNotFoundError as e:
+        exit(filename + " not found")
     matches = re.finditer(regex, data, re.MULTILINE)
 
     for matchNum, match in enumerate(matches):
         obj = re.match('([^-]+)(-[^.]+)?(\.o)', match.group(3)).group(1) + '.o'
         if (cfg['poctogem'] == True and obj in poctogem) or \
            (cfg['mv2700'] == True   and obj in mv2700):
-            hide = True
-        else:
             hide = False
+        else:
+            hide = True
 
         if not hide:
             print(match.group(1) + '/' + match.group(3))

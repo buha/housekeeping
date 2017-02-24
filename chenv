@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+"""chenv
+A script that changes the powerpc-wrs-vxworks development environment.
+
+Usage:
+    chenv (--pocto|--poctogem|--mv2700|--p12xl) 
+          [-e|--exclusive] 
+          (--compiler COMPILER_PATH) 
+          (--vxworks VXW_PATH)
+    chenv (-l | --list)
+    chenv (-v | --version)
+    chenv (-h | --help)
+
+Options:
+    -h --help           Show this screen.
+    -v --version        Show version.
+    --pocto             Set the environment for Precio Octo development.
+    --poctogem          Set the environment for Precio Octo + GEM development.
+    --mv2700            Set the environment for P8-XL development.
+    --p12xl             Set the environment for P12-XL development.
+    -e --exclusive      (Optional) Prior to setting target environment, unset 
+                        environment variables for all targets.
+    -l --list           List all development environment variables.
+    --compiler          Path to powerpc-wrs-vxworks compiler base directory.
+    --vxworks           Path to vxWorks base directory.
+"""
+import sys
+import os
+
+vars = ['GCC_EXEC_PREFIX_G3', 
+        'GCC_EXEC_PREFIX_G4',
+        'VX_VW_BASE_G3', 
+        'VX_VW_BASE_G4',
+        'VW_BIN_DIR_53', 
+        'VW_BIN_DIR_54', 
+        'VW_BIN_DIR_55']
+
+try:
+    from docopt import docopt
+except ImportError:
+    exit("This software refuses to run until docopt is installed:\n$ pip install docopt")
+
+def main(args):
+    if args['--list'] is True:
+        for var in vars:
+            try:
+                print(var + '=' + os.environ[var])
+            except KeyError:
+                print(var + '=')
+        sys.exit()
+
+    if args['--exclusive'] is True:
+        for var in vars:
+            print('unset {}'.format(var))
+
+    if args['--poctogem'] is True or\
+       args['--pocto'] is True:
+        VW_BIN_DIR = 'VW_BIN_DIR_55'
+        GCC_EXEC_PREFIX = 'GCC_EXEC_PREFIX_G4'
+        VX_VW_BASE = 'VX_VW_BASE_G4'
+    elif args['--mv2700'] is True or \
+         args['--p12xl'] is True:
+        VW_BIN_DIR = 'VW_BIN_DIR_54'
+        GCC_EXEC_PREFIX = 'GCC_EXEC_PREFIX_G3'
+        VX_VW_BASE = 'VX_VW_BASE_G3'
+    else:
+        sys.exit('Impossible case due to docopt condition')
+
+    print('export {}={}/bin'.format(VW_BIN_DIR, args['COMPILER_PATH'].rstrip('/')))
+    print('export {}={}/lib/gcc-lib/'.format(GCC_EXEC_PREFIX, args['COMPILER_PATH'].rstrip('/')))
+    print('export {}={}/target'.format(VX_VW_BASE, args['VXW_PATH'].rstrip('/')))
+    
+if __name__ == '__main__':
+    args = docopt(__doc__, version='0.1')
+    main(args)

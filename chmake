@@ -1,0 +1,91 @@
+#!/bin/bash
+
+f_usage()
+{
+   echo " Usage  : `basename $0` sun | linux"
+   echo "          `basename $0` clean"
+}
+
+f_currenttarget()
+{
+	makefiles=($(find . -mindepth 2  -name "./*/Makefile$"))
+	makefile=${makefiles[$RANDOM % ${#makefiless[@]} ]}
+	if grep --quiet "NP_SOFT :sh= echo" $makefile; then
+        echo sun
+	elif grep --quiet 'NP_SOFT := $(shell echo' $makefile; then
+		echo linux
+	else
+		echo "Can't find sun or linux signature in $makefile."
+	fi
+}
+
+f_initial()
+{
+    target=$1
+
+	echo -n "Creating backups of the original sun-specific Makefiles ..."
+	makefiles=($(find . -mindepth 2 -name "Makefile"))
+	for i in ${makefiles[@]}
+	do 
+		cp -a $i  $i.sun
+	done
+	echo " done"
+
+	echo -n "Creating $target-specific Makefiles ........................."
+	for i in ${makefiles[@]}
+	do 
+		changeMakefile_for_gcc.pl $i > $i.linux
+	done
+	makefiles=($(find . -mindepth 2 -name "Makefile.$target"))
+	for i in $makefiles; do 
+		 # remove debugging symbols
+		perl -pi -e "s/-g -mcpu=604/-mcpu=604/" $i	
+		#perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wno-endif-labels -Wno-packed -Wno-overflow/" $i
+		perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wall -Werror -DWIND_RIVER_C=-1/" $i
+	done
+	echo " done"
+}
+
+if [ $# -ne "1" ]
+then
+    f_usage
+else
+    target=$1
+
+    if [ $target == sun -o $target == linux ]
+    then
+		makefiles=($(find . -mindepth 2 -name "Makefile.$target"))
+		if [ ${#makefiles[@]} -eq 0 ]; then
+			f_initial $target
+		fi
+		
+		echo -n "Creating symlinks towards $target-specific Makefiles ......"
+        for i in ${makefiles[@]}
+        do
+            ( cd $(dirname $i);  rm -f Makefile;  ln -s Makefile.$target Makefile )
+        done
+		echo " done"
+    elif [ $target == clean ]
+    then
+        makefiles=($(find . -mindepth 2 -name "Makefile.sun"))
+		if [ ${#makefiles[@]} -eq 0 ]; then
+            echo "Nothing to do"
+			exit 0
+		else
+			echo -n "Restoring original Makefiles..."
+        
+			for i in ${makefiles[@]}; do
+				Makefile="$(dirname $i)/$(basename $i .sun)"
+				rm -f $Makefile
+				mv $i  $Makefile
+				[ -f ${Makefile}.linux ] && rm -f ${Makefile}.linux
+			done
+			echo " Done."
+		fi
+    else
+        f_usage
+    fi
+fi
+
+
+
