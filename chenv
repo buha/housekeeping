@@ -3,7 +3,7 @@
 A script that changes the powerpc-wrs-vxworks development environment.
 
 Usage:
-    chenv (--pocto|--poctogem|--mv2700|--p12xl) 
+    chenv (--pocto|--poctogem|--mv2700|--p12xl|--p1200gem47a|--p120047a) 
           [-e|--exclusive] 
           (--compiler COMPILER_PATH) 
           (--vxworks VXW_PATH)
@@ -23,6 +23,10 @@ Options:
     -l --list           List all development environment variables.
     --compiler          Path to powerpc-wrs-vxworks compiler base directory.
     --vxworks           Path to vxWorks base directory.
+
+Example:    chenv --mv2700 --compiler /usr/local/powerpc-wrs-vxworks --vxworks /home/VxW/vxw5.4 >~/set_chenv
+            chenv --mv2700 --compiler /opt/tor2.2-ppc-linux          --vxworks /home/VxW/vxw5.4 >~/set_chenv
+            chenv --pocto  --compiler /opt/tor2.2-ppc-linux          --vxworks /home/vxw3       >~/set_chenv
 """
 import sys
 import os
@@ -53,7 +57,9 @@ def main(args):
         for var in vars:
             print('unset {}'.format(var))
 
-    if args['--poctogem'] is True or\
+    if args['--poctogem'    ] is True or\
+       args['--p1200gem47a' ] is True or\
+       args['--p120047a'    ] is True or\
        args['--pocto'] is True:
         VW_BIN_DIR = 'VW_BIN_DIR_55'
         GCC_EXEC_PREFIX = 'GCC_EXEC_PREFIX_G4'
