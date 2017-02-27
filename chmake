@@ -20,7 +20,7 @@ f_initial()
 {
     target=$1
 
-	#makefiles=($(find . -mindepth 2 -name "Makefile"))
+	makefiles=($(find . -mindepth 2 -name "Makefile"))
 	#for i in ${makefiles[@]}; do
 	#	if ! f_checkmakefile $i; then
 	#		echo "Weird $i. Please fix it."
@@ -34,17 +34,13 @@ f_initial()
 	done
 	echo " done"
 
-	echo -n "Creating $target-specific Makefiles ........................."
-	for i in ${makefiles[@]}
-	do 
-		changeMakefile_for_gcc.pl $i > $i.linux
-	done
-	makefiles=($(find . -mindepth 2 -name "Makefile.$target"))
-	for i in $makefiles; do 
-		 # remove debugging symbols
-		perl -pi -e "s/-g -mcpu=604/-mcpu=604/" $i	
-		#perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wno-endif-labels -Wno-packed -Wno-overflow/" $i
-		perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wall -Werror -DWIND_RIVER_C=-1/" $i
+	echo -n "Creating linux-specific Makefiles ........................."
+	for i in ${makefiles[@]}; do 
+		cp $i $i.linux
+		perl -pi -e 's#NP_SOFT\s:sh=\secho.*#NP_SOFT := \$(shell echo `pwd | sed -n \"s/\\/code\\// /p\"` \$NP_SOFT | cut -d" " -f1 )#' $i.linux
+		perl -pi -e "s/-g -mcpu=604/-mcpu=604/" $i.linux # remove debugging symbols	
+		#perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wno-endif-labels -Wno-packed -Wno-overflow/" $i.linux
+		perl -pi -e "s/CFLAGS =( -O)? -Wall -Werror/CFLAGS = -O -Wall -Werror -DWIND_RIVER_C=-1/" $i.linux
 	done
 	echo " done"
 }
