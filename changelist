@@ -4,15 +4,13 @@ A script that lists the objects modified in the pre-link phase.
 These objects may then be relinked in vxWorks to reload changes.
 
 Usage:
-    changelist [--poctogem | --mv2700] FILE
+    changelist FILE
     changelist [--version]
     changelist [-h | --help]
 
 Options:
     -h --help                   Show this screen.
     --version                   Show version.
-    --poctogem                  Filter objects to poctogem specific objects.
-    --mv2700                    Filter objects to mv2700 specific objects.
 
 Adding filters:
     Run this command over a startup script  to obtain the objects needed to be linked at run-time:
@@ -28,22 +26,12 @@ try:
 except ImportError:
     exit("This software refuses to run until docopt is installed:\n$ pip install docopt")
 
-# Filters
-poctogem = ("Simu.o", "Subipdrv.o", "ioBrdmisc.o", "fpcLib.o", "MmiIni.o", "npSys.o", "MmiLib.o", "Hddata.o", "Loader.o", "Stgbasic.o", "Ipfunc.o", "Stgapl.o", "Align.o", "sacc.o", "AcuVme.o", "Option.o", "printSub.o", "Alnapl.o", "Polish.o", "Inspfunc.o", "Lha.o", "MmiSDiag.o", "MmiSetup.o", "MmiTrack.o", "MmiChg.o", "MmiDiag.o", "MmiStage.o", "MmiBase.o", "prbD_ldcall.o", "StgDiag.o", "Diag.o", "libNetPronet.o", "Appli.o")
-mv2700 = ("Simu.o", "fpcLib.o", "MmiIni.o", "npSys.o", "StgCommon.o", "Common.o", "ProbLib.o", "MmiLib.o", "Loader.o", "Hddata.o", "Stgbasic.o", "Ipfunc.o", "Stgapl.o", "Align.o", "sacc.o", "AcuVme.o", "Option.o", "printSub.o", "Alnapl.o", "Polish.o", "Inspfunc.o", "Lha.o", "MmiSDiag.o", "MmiTrack.o", "MmiChg.o", "MmiSetup.o", "MmiDiag.o", "MmiStage.o", "MmiBase.o", "prbD_ldcall.o", "StgDiag.o", "Diag.o", "libNetPronet.o", "Appli.o")
-
 def main(args):
 
     # default configuration
     cfg = {}
-    cfg['poctogem'] = False
-    cfg['mv2700'] = False
 
-    # overwrite defaults with the command line input
-    cfg['poctogem'] = args['--poctogem']
-    cfg['mv2700'] = args['--mv2700']
-
-    regex = r"Entering directory .+?\/Prb\/code\/(.*)\'(.|\n)+?ldppc .*-o ([^.]*.o)"
+    regex = r"Entering directory .+?\/code\/(.*)\'(.|\n)+?ldppc .*-o ([^.]*.o)"
 
     try:
         filename=args['FILE']
@@ -53,18 +41,13 @@ def main(args):
         exit("File not specified")
     except FileNotFoundError as e:
         exit(filename + " not found")
+    
     matches = re.finditer(regex, data, re.MULTILINE)
 
     for matchNum, match in enumerate(matches):
         obj = re.match('([^-]+)(-[^.]+)?(\.o)', match.group(3)).group(1) + '.o'
-        if (cfg['poctogem'] == True and obj in poctogem) or \
-           (cfg['mv2700'] == True   and obj in mv2700):
-            hide = False
-        else:
-            hide = True
-
-        if not hide:
-            print(match.group(1) + '/' + match.group(3))
+            
+        print(match.group(1) + '/' + match.group(3))
     
 if __name__ == '__main__':
     args = docopt(__doc__, version='0.1')
