@@ -11,11 +11,6 @@ Usage:
 Options:
     -h --help                   Show this screen.
     --version                   Show version.
-
-Adding filters:
-    Run this command over a startup script  to obtain the objects needed to be linked at run-time:
-        perl -ne \'m|^ld < \/.*\/(.+.o)| && print \"\\"$1\\", \"\' startup-script.cmd 
-    The list can then be added to this script.
 """
 import sys
 import os
@@ -27,11 +22,7 @@ except ImportError:
     exit("This software refuses to run until docopt is installed:\n$ pip install docopt")
 
 def main(args):
-
-    # default configuration
-    cfg = {}
-
-    regex = r"Entering directory .+?\/code\/(.*)\'(.|\n)+?ldppc .*-o ([^.]*.o)"
+    regex = r".+?ldppc .*-o ([^.]*.o)(.|\n)+?Leaving directory .+?\/code\/(.*)\'"
 
     try:
         filename=args['FILE']
@@ -44,10 +35,8 @@ def main(args):
     
     matches = re.finditer(regex, data, re.MULTILINE)
 
-    for matchNum, match in enumerate(matches):
-        obj = re.match('([^-]+)(-[^.]+)?(\.o)', match.group(3)).group(1) + '.o'
-            
-        print(match.group(1) + '/' + match.group(3))
+    for match in matches:
+        print(match.group(3) + '/' + match.group(1))
     
 if __name__ == '__main__':
     args = docopt(__doc__, version='0.1')
