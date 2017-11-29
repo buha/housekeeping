@@ -1,16 +1,14 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" plugins
-execute pathogen#infect()
 call plug#begin('~/.vim/plugged')
-
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
-
-" Initialize plugin system
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'bogado/file-line'
 call plug#end()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" leader 
 let mapleader="\<Space>"
-" toggle gundo
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tabs
 nnoremap <Leader>t :tabe<CR>
