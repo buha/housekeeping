@@ -44,6 +44,9 @@ highlight CursorLine ctermbg=Black cterm=none gui=none
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" search
 set incsearch       " search as characters are entered
 set hlsearch        " highlight matches
+set ignorecase
+set smartcase 		" searching for aaaaa will be case-insensitive
+					" whereas aAaaa will be case-sensitive
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" quit / save
 nnoremap <Leader>w :w<CR>
@@ -61,7 +64,31 @@ nnoremap <C-Right> <C-w>l
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" syntax & coloring
 syntax on
+hi! link cTodo Underlined	" custom color to highlight TODO
+							" the default one doesn't work with dark gnome-terminal
+
+" use this mapping to get the color settings under cursor
+nnoremap <Leader>hi :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">" . " FG:" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"fg#")<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" autocomplete
 filetype plugin indent on " use the builtin pythoncomplete.vim
 set runtimepath^=~/.vim/bundle/ag
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tags
+set cscopetag		" look for cscope tags as well
+
+" autoload cscope database
+function! LoadCscope()
+  let db = findfile("cscope.out", ".;")
+  if (!empty(db))
+    let path = strpart(db, 0, match(db, "/cscope.out$"))
+    set nocscopeverbose " suppress 'duplicate connection' error
+    exe "cs add " . db . " " . path
+    set cscopeverbose
+  " else add the database pointed to by environment variable 
+  elseif $CSCOPE_DB != "" 
+    cs add $CSCOPE_DB
+  endif
+endfunction
+au BufEnter /* call LoadCscope()
+
