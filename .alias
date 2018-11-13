@@ -1,0 +1,23 @@
+alias cp="cp -i"                          # confirm before overwriting something
+alias df='df -h'                          # human-readable sizes
+alias free='free -m'                      # show sizes in MB
+alias ll='ls -lt'
+
+# List available serial devices by ID and by tty device number.
+function lsttyfunc 
+{
+	dmesg | grep ttyS | sed -r "s|.*(ttyS[^\s]+) at I\/O.*$|/dev/\1|"	
+
+	devices=/dev/serial/by-id/*
+	for d in $devices; do 
+		echo $d -\> $(readlink -f $d) 
+	done
+}
+
+alias lstty="lsttyfunc"
+
+# Fluke device serial interface prefix
+alias fluketty="picocom -b 115200 -d 8 -p n -f n"
+
+# Fluke Remote Serial Communication Protocol
+alias flukerscp="picocom  --imap=lfcrlf,crcrlf --omap=lfcrlf --emap=crcrlf,delbs --echo -b 115200"

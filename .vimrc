@@ -16,7 +16,7 @@ nnoremap <Leader>t :tabe<CR>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" TAB spaces
 set tabstop=4       " number of visual spaces per TAB
 set softtabstop=4   " number of spaces in tab when editing
-set expandtab       " tabs are spaces
+"set expandtab       " tabs are spaces
 set shiftwidth=4
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tags
 "nnoremap <C-[> <C-t>
