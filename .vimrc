@@ -76,6 +76,7 @@ set runtimepath^=~/.vim/bundle/ag
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" tags
 set cscopetag		" look for cscope tags as well
+set csre			" relative paths
 
 " autoload cscope database
 function! LoadCscope()
