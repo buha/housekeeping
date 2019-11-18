@@ -1,0 +1,23 @@
+#!/bin/bash
+# This script looks up the directory tree for a git root.
+# If found, it generates there the cscope.out based on a
+# unix 'find' generated cscope.files that can filter out
+# unneeded files and directories in the project.
+# 
+# Use this script from anywhere within a git tracked 
+# project in conjunctoin with the following vim options:
+#   set cscopetag
+#   set csre
+BOLD='\033[1m'
+NORMAL='\033[0m'
+GITROOT=$(git rev-parse --show-toplevel)
+if [ $? != 0 ]; then
+	echo $(pwd) is not a git tracked subdirectory.
+	exit 0
+fi
+find $GITROOT -regextype posix-egrep -regex '.+\.(c|cpp|h)$' -not -path '*/build/*' > $GITROOT/cscope.files
+cd $GITROOT
+cscope -b 
+if [ $? == 0 ]; then
+	echo -e Cscope tags $BOLD$GITROOT/cscope.out$NORMAL generated from $BOLD$GITROOT/cscope.files$NORMAL
+fi
